@@ -26,6 +26,7 @@ npm run dev
 
 ```bash
 cd app
+npm ci
 npm run build
 ```
 
