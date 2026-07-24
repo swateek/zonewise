@@ -19,3 +19,6 @@ repos:
     hooks:
       - id: prettier
         files: ^(app/src/.*\.(ts|css)|app/index\.html|.*\.(json|md|yml|yaml|toml))$
+        # Match .prettierignore: .github/ is ignored, so don't pass those paths to prettier
+        # (prettier exits 1 when every matched file is ignored).
+        exclude: ^\.github/
