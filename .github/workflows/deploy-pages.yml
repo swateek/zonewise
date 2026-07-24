@@ -28,15 +28,6 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run build
-      # pages deploy does not create the project; create once if missing.
-      - name: Ensure Pages project exists
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if ! npx wrangler pages project list --json | grep -Eq '"name"[[:space:]]*:[[:space:]]*"zonewise"'; then
-            npx wrangler pages project create zonewise --production-branch=main
-          fi
       - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
