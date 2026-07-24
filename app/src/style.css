@@ -155,11 +155,13 @@ body::before {
 
 .time-row {
   display: grid;
+  grid-template-columns: 1fr auto;
   gap: 0.75rem;
+  align-items: start;
 }
 
 .time-row.range {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr auto;
 }
 
 .time-field {
@@ -167,6 +169,13 @@ body::before {
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+}
+
+.time-now {
+  margin-top: 0;
+  min-height: 2.75rem;
+  align-self: start;
+  border-radius: var(--radius);
 }
 
 .time-input,

@@ -1,7 +1,7 @@
 import "./style.css";
 import {
-  DEFAULT_SOURCE_ID,
   DEFAULT_TARGET_IDS,
+  browserSourceId,
   cityLabel,
   cityMeta,
   getCityById,
@@ -51,26 +51,49 @@ type State = {
   deleteConfirmOpen: boolean;
 };
 
-const DEFAULT_START = "10:30";
-const DEFAULT_END = formatTimeInput(
-  addMinutes(parseTimeInput(DEFAULT_START) ?? 630, 60),
-);
+const TIME_PLACEHOLDER = "10:30 am or 22:30";
+const TIME_HINT = "Use a time like 10:30 am or 22:30";
 
-function displayTime(hhmm: string): string {
-  const minutes = parseTimeInput(hhmm);
-  return minutes === null ? "" : format12h(minutes);
+function prefers24h(draft: string): boolean {
+  return !/[ap]\.?m\.?/i.test(draft.trim());
 }
+
+function formatWall(minutes: MinutesOfDay, as24h = false): string {
+  return as24h ? formatTimeInput(minutes) : format12h(minutes);
+}
+
+function displayTime(hhmm: string, as24h = false): string {
+  const minutes = parseTimeInput(hhmm);
+  return minutes === null ? "" : formatWall(minutes, as24h);
+}
+
+function minutesFromBrowserNow(): MinutesOfDay {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+function defaultTargetIds(sourceId: string): string[] {
+  return DEFAULT_TARGET_IDS.filter((id) => id !== sourceId);
+}
+
+function initialSourceId(): string {
+  return browserSourceId();
+}
+
+const initialSource = initialSourceId();
+const initialStart = minutesFromBrowserNow();
+const initialEnd = addMinutes(initialStart, 60);
 
 const state: State = {
   mode: "point",
-  start: DEFAULT_START,
-  end: DEFAULT_END,
-  startDraft: displayTime(DEFAULT_START),
-  endDraft: displayTime(DEFAULT_END),
+  start: formatTimeInput(initialStart),
+  end: formatTimeInput(initialEnd),
+  startDraft: formatWall(initialStart),
+  endDraft: formatWall(initialEnd),
   startInvalid: false,
   endInvalid: false,
-  sourceId: DEFAULT_SOURCE_ID,
-  targetIds: [...DEFAULT_TARGET_IDS],
+  sourceId: initialSource,
+  targetIds: defaultTargetIds(initialSource),
   sourceQuery: "",
   targetQuery: "",
   sourceOpen: false,
@@ -133,12 +156,33 @@ function applySetCities(set: CitySet): void {
 }
 
 function applyDefaults(): void {
-  state.sourceId = DEFAULT_SOURCE_ID;
-  state.targetIds = [...DEFAULT_TARGET_IDS];
+  const sourceId = browserSourceId();
+  state.sourceId = sourceId;
+  state.targetIds = defaultTargetIds(sourceId);
   state.activeSetId = null;
   state.namingOpen = false;
   state.nameDraft = "";
   state.deleteConfirmOpen = false;
+}
+
+function applyNow(): void {
+  const minutes = minutesFromBrowserNow();
+  state.start = formatTimeInput(minutes);
+  state.startDraft = formatWall(minutes);
+  state.startInvalid = false;
+  if (state.mode === "range") {
+    const duration = state.activeDuration ?? 60;
+    syncEndFromDuration(duration);
+  } else {
+    state.end = formatTimeInput(addMinutes(minutes, 60));
+    state.endDraft = formatWall(addMinutes(minutes, 60));
+    state.endInvalid = false;
+    state.activeDuration = 60;
+  }
+  syncTimeInput("start");
+  syncTimeInput("end");
+  updateDurationChips();
+  updateResults();
 }
 
 function syncSourceInput(): void {
@@ -180,13 +224,13 @@ function timeFieldHtml(id: "start" | "end"): string {
         inputmode="text"
         autocomplete="off"
         spellcheck="false"
-        placeholder="10:30 am"
+        placeholder="${TIME_PLACEHOLDER}"
         value="${escapeHtml(draft)}"
         aria-invalid="${invalid}"
         aria-describedby="${id}-time-hint"
       />
       <p class="time-hint${invalid ? " error" : ""}" id="${id}-time-hint" ${invalid ? "" : "hidden"}>
-        Use a time like 10:30 am
+        ${TIME_HINT}
       </p>
     </div>`;
 }
@@ -226,10 +270,11 @@ function applyTimeDraft(
   }
 
   const hhmm = formatTimeInput(parsed);
+  const as24h = prefers24h(draft);
   if (id === "start") {
     state.start = hhmm;
     state.startInvalid = false;
-    if (normalize) state.startDraft = format12h(parsed);
+    if (normalize) state.startDraft = formatWall(parsed, as24h);
     if (state.mode === "range" && state.activeDuration != null) {
       syncEndFromDuration(state.activeDuration);
     } else {
@@ -238,7 +283,7 @@ function applyTimeDraft(
   } else {
     state.end = hhmm;
     state.endInvalid = false;
-    if (normalize) state.endDraft = format12h(parsed);
+    if (normalize) state.endDraft = formatWall(parsed, as24h);
     state.activeDuration = detectActiveDuration();
   }
 
@@ -623,6 +668,7 @@ function renderShell(): void {
             <div id="end-wrap" ${state.mode === "range" ? "" : "hidden"}>
               ${timeFieldHtml("end")}
             </div>
+            <button type="button" class="chip time-now" id="time-now" title="Use current time">Now</button>
           </div>
           <div id="range-extras" ${state.mode === "range" ? "" : "hidden"}>
             <div class="duration-chips" role="group" aria-label="Set range length">
@@ -721,6 +767,11 @@ function bindGlobal(): void {
       syncEndFromDuration(Number(durBtn.dataset.duration));
       updateDurationChips();
       updateResults();
+      return;
+    }
+
+    if (t.closest("#time-now")) {
+      applyNow();
       return;
     }
 
