@@ -1,8 +1,6 @@
-.*
-!.gitignore
-!.pre-commit-config.yaml
-!.prettierignore
-!.github
 node_modules
 dist
+.DS_Store
 *.local
+.wrangler
+.dev.vars
