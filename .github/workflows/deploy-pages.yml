@@ -22,14 +22,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 'latest'
+          # Pin LTS — `latest` currently resolves to Node 26 and breaks wrangler.
+          node-version: '22'
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run build
-      - uses: cloudflare/wrangler-action@v3
+      - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: app
-          command: pages deploy dist --project-name=zonewise
+          # Checkout is already the tag (or workflow_dispatch ref).
+          # --branch=main only aliases this build to production (zonewise.pages.dev);
+          # without it, detached HEAD publishes a preview at head.*.pages.dev.
+          command: >-
+            pages deploy dist
+            --project-name=zonewise
+            --branch=main
+            --commit-hash=${{ github.sha }}
+            --commit-message=${{ github.ref_name }}
