@@ -10,7 +10,7 @@ See the same moment in every city. Shows both **Standard** and **Daylight** offs
 2. Enter a time like `10:30 am`. In Range mode you can set an end time or use **+30m** / **+1h** / **+2h**.
 3. Pick the **From** city (source timezone). Defaults to Bengaluru.
 4. Add destination cities with **+ Add city**, or remove any with ×. Results update immediately for each city.
-5. Optionally **Save as** a named set of cities (stored in the browser). Switch sets from the chips; **Save** when you’ve changed an active set, or **Delete** to remove it.
+5. Optionally **Save as** a named set of cities (stored in the browser). Switch sets from the chips; **Save** overwrites the active set, **Save as** creates another, or **Delete** removes it.
 
 No dates — only clock times and timezone offsets.
 

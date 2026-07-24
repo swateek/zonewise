@@ -437,7 +437,7 @@ function setsBarHtml(): string {
         <div class="sets-chips">${chips}</div>
         <div class="sets-actions">
           <button type="button" class="text-btn" id="save-set" ${dirty && canSaveSet() && !state.deleteConfirmOpen ? "" : "hidden"}>Save</button>
-          <button type="button" class="text-btn" id="save-as-set" ${state.activeSetId || state.namingOpen || state.deleteConfirmOpen || !canSaveSet() ? "hidden" : ""}>Save as</button>
+          <button type="button" class="text-btn" id="save-as-set" ${state.namingOpen || state.deleteConfirmOpen || !canSaveSet() ? "hidden" : ""}>Save as</button>
           <button type="button" class="text-btn danger" id="delete-set" ${showDelete ? "" : "hidden"} aria-label="Delete active set">Delete</button>
         </div>
       </div>
