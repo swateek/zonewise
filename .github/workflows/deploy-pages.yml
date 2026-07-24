@@ -33,4 +33,12 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: app
-          command: pages deploy dist --project-name=zonewise
+          # Checkout is already the tag (or workflow_dispatch ref).
+          # --branch=main only aliases this build to production (zonewise.pages.dev);
+          # without it, detached HEAD publishes a preview at head.*.pages.dev.
+          command: >-
+            pages deploy dist
+            --project-name=zonewise
+            --branch=main
+            --commit-hash=${{ github.sha }}
+            --commit-message=${{ github.ref_name }}
