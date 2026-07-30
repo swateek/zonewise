@@ -8,6 +8,7 @@ import {
   searchCities,
   type City,
 } from "./data/cities";
+import { initAnalytics, trackEvent } from "./lib/analytics";
 import {
   addMinutes,
   convertForCity,
@@ -183,6 +184,7 @@ function applyNow(): void {
   syncTimeInput("end");
   updateDurationChips();
   updateResults();
+  trackEvent("time_now", { mode: state.mode });
 }
 
 function syncSourceInput(): void {
@@ -291,6 +293,9 @@ function applyTimeDraft(
   syncTimeInput("end");
   updateDurationChips();
   updateResults();
+  if (normalize) {
+    trackEvent("time_edit", { field: id, mode: state.mode });
+  }
 }
 
 function detectActiveDuration(): number | null {
@@ -578,6 +583,10 @@ function switchToSet(id: string): void {
   persistSets(set.id);
   syncSourceInput();
   afterCityChange();
+  trackEvent("set_select", {
+    target_count: set.targetIds.length,
+    set_count: state.sets.length,
+  });
 }
 
 function closeDeleteConfirm(): void {
@@ -598,6 +607,9 @@ function saveActiveSet(): void {
   };
   persistSets(state.activeSetId);
   updateSetsBar();
+  trackEvent("set_save", {
+    target_count: state.targetIds.length,
+  });
 }
 
 function saveAsNewSet(name: string): void {
@@ -610,6 +622,10 @@ function saveAsNewSet(name: string): void {
   state.nameDraft = "";
   persistSets(set.id);
   updateSetsBar();
+  trackEvent("set_save_as", {
+    target_count: state.targetIds.length,
+    set_count: state.sets.length,
+  });
 }
 
 function deleteActiveSet(): void {
@@ -617,6 +633,9 @@ function deleteActiveSet(): void {
   const removingId = state.activeSetId;
   const remaining = state.sets.filter((s) => s.id !== removingId);
   state.sets = remaining;
+  trackEvent("set_delete", {
+    set_count: remaining.length,
+  });
   if (remaining.length > 0) {
     const next = remaining[0]!;
     applySetCities(next);
@@ -636,6 +655,10 @@ function restoreFromStorage(): void {
     const set = getSet(store, store.lastUsedSetId);
     if (set) {
       applySetCities(set);
+      trackEvent("set_restored", {
+        set_count: store.sets.length,
+        target_count: set.targetIds.length,
+      });
       return;
     }
   }
@@ -759,14 +782,17 @@ function bindGlobal(): void {
       updateTimeFieldsVisibility();
       updateDurationChips();
       updateResults();
+      trackEvent("mode_change", { mode: state.mode });
       return;
     }
 
     const durBtn = t.closest<HTMLButtonElement>("[data-duration]");
     if (durBtn?.dataset.duration) {
-      syncEndFromDuration(Number(durBtn.dataset.duration));
+      const minutes = Number(durBtn.dataset.duration);
+      syncEndFromDuration(minutes);
       updateDurationChips();
       updateResults();
+      trackEvent("duration_select", { minutes });
       return;
     }
 
@@ -830,10 +856,13 @@ function bindGlobal(): void {
 
     const removeBtn = t.closest<HTMLButtonElement>("[data-remove-target]");
     if (removeBtn?.dataset.removeTarget) {
-      state.targetIds = state.targetIds.filter(
-        (id) => id !== removeBtn.dataset.removeTarget,
-      );
+      const cityId = removeBtn.dataset.removeTarget;
+      state.targetIds = state.targetIds.filter((id) => id !== cityId);
       afterCityChange();
+      trackEvent("target_city_remove", {
+        city_id: cityId,
+        target_count: state.targetIds.length,
+      });
       return;
     }
 
@@ -846,6 +875,7 @@ function bindGlobal(): void {
         queueMicrotask(() =>
           app.querySelector<HTMLInputElement>("#target-city")?.focus(),
         );
+        trackEvent("add_city_open");
       }
       return;
     }
@@ -864,6 +894,7 @@ function bindGlobal(): void {
       if (input && city) input.value = cityLabel(city);
       updateSourceList();
       afterCityChange();
+      trackEvent("source_city_change", { city_id: id });
       return;
     }
 
@@ -876,6 +907,10 @@ function bindGlobal(): void {
       state.targetQuery = "";
       state.targetOpen = false;
       afterCityChange();
+      trackEvent("target_city_add", {
+        city_id: id,
+        target_count: state.targetIds.length,
+      });
       return;
     }
   });
@@ -982,6 +1017,7 @@ function bindGlobal(): void {
   });
 }
 
+initAnalytics();
 restoreFromStorage();
 renderShell();
 bindGlobal();

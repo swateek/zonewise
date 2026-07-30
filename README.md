@@ -66,6 +66,9 @@ npm run deploy
 | ----------------------- | ---------------------------------------- |
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID from the Cloudflare dashboard |
 | `CLOUDFLARE_API_TOKEN`  | API token (see below)                    |
+| `GA_MEASUREMENT_ID`     | Google Analytics measurement ID (`G-…`)  |
+
+The deploy workflow passes `GA_MEASUREMENT_ID` into the Vite build as `VITE_GA_MEASUREMENT_ID`. For local Analytics testing, put the same value in `app/.env.local`.
 
 Create the token at [API Tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → **Custom Token**. Under **Permissions**, select:
 
